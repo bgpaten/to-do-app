@@ -1,197 +1,196 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
-import Swal from 'sweetalert2'
+import { ref, onMounted, computed } from "vue";
+import axios from "axios";
+import Swal from "sweetalert2";
+import { Icon } from "@iconify/vue";
 
-const API_URL = import.meta.env.PROD ? '/api/tasks' : 'http://localhost:8000/tasks'
+const API_URL = import.meta.env.PROD
+  ? "/api/tasks"
+  : "http://localhost:8000/tasks";
 
-const tasks = ref([])
-const isLoading = ref(false)
-const error = ref(null)
+const tasks = ref([]);
+const isLoading = ref(false);
+const error = ref(null);
 
 // Form state
 const formData = ref({
   id: null,
-  title: '',
+  title: "",
   priority: 3,
-  due_date: ''
-})
-const isEditing = ref(false)
-const filterStatus = ref('all') // all, pending, completed
-const sortBy = ref('priority') // priority, due_date
+  due_date: "",
+});
+const isEditing = ref(false);
+const filterStatus = ref("all"); // all, pending, completed
+const sortBy = ref("priority"); // priority, due_date
 
 const priorityLabels = {
-  1: 'High',
-  2: 'Medium',
-  3: 'Low'
-}
+  1: "High",
+  2: "Medium",
+  3: "Low",
+};
 
 const priorityClasses = {
-  1: 'priority-high',
-  2: 'priority-medium',
-  3: 'priority-low'
-}
+  1: "priority-high",
+  2: "priority-medium",
+  3: "priority-low",
+};
 
 // Fetch tasks
 const fetchTasks = async () => {
-  isLoading.value = true
+  isLoading.value = true;
   try {
-    const response = await axios.get(API_URL)
-    tasks.value = response.data
+    const response = await axios.get(API_URL);
+    tasks.value = response.data;
   } catch (err) {
-    error.value = 'Failed to load tasks'
-    console.error(err)
+    error.value = "Failed to load tasks";
+    console.error(err);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 // Add or Update Task
 const handleSubmit = async () => {
   if (!formData.value.title.trim()) {
     Swal.fire({
-      icon: 'warning',
-      title: 'Validation Error',
-      text: 'Title cannot be empty!'
-    })
-    return
+      icon: "warning",
+      title: "Validation Error",
+      text: "Title cannot be empty!",
+    });
+    return;
   }
 
   try {
     if (isEditing.value) {
-      await axios.put(`${API_URL}/${formData.value.id}`, formData.value)
+      await axios.put(`${API_URL}/${formData.value.id}`, formData.value);
     } else {
-      await axios.post(API_URL, formData.value)
+      await axios.post(API_URL, formData.value);
     }
-    
+
     // Reset form and refresh list
-    resetForm()
-    await fetchTasks()
+    resetForm();
+    await fetchTasks();
     Swal.fire({
-      icon: 'success',
-      title: isEditing.value ? 'Task Updated' : 'Task Added',
+      icon: "success",
+      title: isEditing.value ? "Task Updated" : "Task Added",
       showConfirmButton: false,
-      timer: 1500
-    })
+      timer: 1500,
+    });
   } catch (err) {
     Swal.fire({
-      icon: 'error',
-      title: 'Operation Failed',
-      text: err.response?.data?.error || 'Something went wrong'
-    })
-    console.error(err)
+      icon: "error",
+      title: "Operation Failed",
+      text: err.response?.data?.error || "Something went wrong",
+    });
+    console.error(err);
   }
-}
+};
 
 // Delete Task
 const deleteTask = async (id) => {
   const result = await Swal.fire({
-    title: 'Are you sure?',
+    title: "Are you sure?",
     text: "You won't be able to revert this!",
-    icon: 'warning',
+    icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Yes, delete it!'
-  })
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Yes, delete it!",
+  });
 
-  if (!result.isConfirmed) return
+  if (!result.isConfirmed) return;
 
   try {
-    await axios.delete(`${API_URL}/${id}`)
-    await fetchTasks()
-    Swal.fire(
-      'Deleted!',
-      'Your task has been deleted.',
-      'success'
-    )
+    await axios.delete(`${API_URL}/${id}`);
+    await fetchTasks();
+    Swal.fire("Deleted!", "Your task has been deleted.", "success");
   } catch (err) {
     Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Failed to delete task'
-    })
+      icon: "error",
+      title: "Error",
+      text: "Failed to delete task",
+    });
   }
-}
+};
 
 // Toggle Completion
 const toggleStatus = async (task) => {
   try {
     await axios.put(`${API_URL}/${task.id}`, {
-      is_completed: !task.is_completed
-    })
-    await fetchTasks()
+      is_completed: !task.is_completed,
+    });
+    await fetchTasks();
   } catch (err) {
-    console.error(err)
+    console.error(err);
   }
-}
+};
 
 // Edit Mode
 const editTask = (task) => {
-  isEditing.value = true
+  isEditing.value = true;
   formData.value = {
     id: task.id,
     title: task.title,
     priority: task.priority,
-    due_date: task.due_date || ''
-  }
-}
+    due_date: task.due_date || "",
+  };
+};
 
 const resetForm = () => {
-  isEditing.value = false
+  isEditing.value = false;
   formData.value = {
     id: null,
-    title: '',
+    title: "",
     priority: 3,
-    due_date: ''
-  }
-}
+    due_date: "",
+  };
+};
 
 onMounted(() => {
-  fetchTasks()
-})
+  fetchTasks();
+});
 
 const filteredTasks = computed(() => {
-  let result = [...tasks.value]
+  let result = [...tasks.value];
 
   // Filter
-  if (filterStatus.value === 'pending') {
-    result = result.filter(t => !t.is_completed)
-  } else if (filterStatus.value === 'completed') {
-    result = result.filter(t => t.is_completed)
+  if (filterStatus.value === "pending") {
+    result = result.filter((t) => !t.is_completed);
+  } else if (filterStatus.value === "completed") {
+    result = result.filter((t) => t.is_completed);
   }
 
   // Sort
   result.sort((a, b) => {
-    if (sortBy.value === 'priority') {
-      return a.priority - b.priority // Ascending: 1 (High) -> 3 (Low)
-    } else if (sortBy.value === 'due_date') {
-      if (!a.due_date) return 1
-      if (!b.due_date) return -1
-      return new Date(a.due_date) - new Date(b.due_date)
+    if (sortBy.value === "priority") {
+      return a.priority - b.priority; // Ascending: 1 (High) -> 3 (Low)
+    } else if (sortBy.value === "due_date") {
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+      return new Date(a.due_date) - new Date(b.due_date);
     }
-    return 0
-  })
+    return 0;
+  });
 
-  return result
-})
+  return result;
+});
 </script>
 
 <template>
   <div class="task-manager">
     <!-- Task Form -->
     <div class="task-form">
-      <h3>{{ isEditing ? 'Edit Task' : 'Add New Task' }}</h3>
+      <h3>{{ isEditing ? "Edit Task" : "Add New Task" }}</h3>
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
-          <input 
-            v-model="formData.title" 
-            placeholder="Task Title" 
+          <input
+            v-model="formData.title"
+            placeholder="Task Title"
             required
             class="input-field"
           />
         </div>
-        
+
         <div class="form-row">
           <div class="form-group">
             <select v-model="formData.priority" class="input-field">
@@ -200,10 +199,10 @@ const filteredTasks = computed(() => {
               <option :value="3">Low Priority</option>
             </select>
           </div>
-          
+
           <div class="form-group">
-            <input 
-              type="date" 
+            <input
+              type="date"
               v-model="formData.due_date"
               class="input-field"
             />
@@ -212,12 +211,12 @@ const filteredTasks = computed(() => {
 
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">
-            {{ isEditing ? 'Update Task' : 'Add Task' }}
+            {{ isEditing ? "Update Task" : "Add Task" }}
           </button>
-          <button 
-            v-if="isEditing" 
-            type="button" 
-            @click="resetForm" 
+          <button
+            v-if="isEditing"
+            type="button"
+            @click="resetForm"
             class="btn btn-secondary"
           >
             Cancel
@@ -242,7 +241,7 @@ const filteredTasks = computed(() => {
           </select>
         </div>
       </div>
-      
+
       <!-- Skeleton Loading -->
       <div v-if="isLoading" class="skeleton-container">
         <div v-for="n in 3" :key="n" class="skeleton-task">
@@ -260,19 +259,18 @@ const filteredTasks = computed(() => {
       <div v-else-if="tasks.length === 0" class="empty-state">
         No tasks found. Add one above!
       </div>
-      
-      
+
       <ul v-else class="task-list">
-        <li 
-          v-for="task in filteredTasks" 
-          :key="task.id" 
-          :class="['task-item', { 'completed': task.is_completed }]"
+        <li
+          v-for="task in filteredTasks"
+          :key="task.id"
+          :class="['task-item', { completed: task.is_completed }]"
         >
           <div class="task-content">
             <div class="task-header">
-              <input 
-                type="checkbox" 
-                :checked="task.is_completed" 
+              <input
+                type="checkbox"
+                :checked="task.is_completed"
                 @change="toggleStatus(task)"
                 class="checkbox"
               />
@@ -281,7 +279,7 @@ const filteredTasks = computed(() => {
                 {{ priorityLabels[task.priority] }}
               </span>
             </div>
-            
+
             <div class="task-meta">
               <span v-if="task.due_date" class="due-date">
                 Due: {{ task.due_date }}
@@ -290,8 +288,13 @@ const filteredTasks = computed(() => {
           </div>
 
           <div class="task-actions">
-            <button @click="editTask(task)" class="btn-icon">✏️</button>
-            <button @click="deleteTask(task.id)" class="btn-icon delete">🗑️</button>
+            <button @click="editTask(task)" class="btn-icon">
+              <Icon icon="mdi:pencil" width="18" />
+            </button>
+
+            <button @click="deleteTask(task.id)" class="btn-icon delete">
+              <Icon icon="mdi:trash-can" width="18" />
+            </button>
           </div>
         </li>
       </ul>
@@ -402,9 +405,15 @@ const filteredTasks = computed(() => {
   color: white;
 }
 
-.priority-high { background-color: #e74c3c; }
-.priority-medium { background-color: #f39c12; }
-.priority-low { background-color: #3498db; }
+.priority-high {
+  background-color: #e74c3c;
+}
+.priority-medium {
+  background-color: #f39c12;
+}
+.priority-low {
+  background-color: #3498db;
+}
 
 .task-meta {
   margin-left: 30px;
@@ -487,9 +496,15 @@ const filteredTasks = computed(() => {
 }
 
 @keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
 }
 
 .list-header {

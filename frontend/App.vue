@@ -5,7 +5,7 @@ import TaskList from './components/TaskList.vue'
 <template>
   <div class="container">
     <header>
-      <h1>Todo List Full-Stack</h1>
+      <h1>Todo List</h1>
     </header>
     <main>
       <TaskList />

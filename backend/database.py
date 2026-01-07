@@ -3,10 +3,10 @@ import os
 
 DB_NAME = "todo.db"
 
-# For Vercel (Read-only filesystem), use /tmp
-# NOTE: Data will be lost on function restart!
-if os.environ.get('VERCEL'):
-    DB_NAME = "/tmp/todo.db"
+# # For Vercel (Read-only filesystem), use /tmp
+# # NOTE: Data will be lost on function restart!
+# if os.environ.get('VERCEL'):
+#     DB_NAME = "/tmp/todo.db"
 
 def get_db_connection():
     conn = sqlite3.connect(DB_NAME)
